@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#16240F"/>
+      <stop offset="100%" stop-color="#050705"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <g stroke="#A8E063" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <rect x="70" y="196" width="52" height="120" rx="18" fill="#A8E063" stroke="none"/>
+    <rect x="390" y="196" width="52" height="120" rx="18" fill="#A8E063" stroke="none"/>
+    <rect x="136" y="164" width="56" height="184" rx="20"/>
+    <rect x="320" y="164" width="56" height="184" rx="20"/>
+    <path d="M192 256h128"/>
+  </g>
+</svg>

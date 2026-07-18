@@ -1,0 +1,260 @@
+@import 'tailwindcss';
+
+/* ─── FORGE design tokens — the single visual source of truth ───
+   Every color, glow, and radius in the app derives from these.
+   See docs/DESIGN-SYSTEM.md before adding any new visual. */
+@theme {
+  /* Surfaces */
+  --color-bg0: #050705; /* page — OLED near-black, green cast */
+  --color-bg1: #0a0f0a; /* raised zones */
+  --color-glass: rgba(255, 255, 255, 0.035);
+  --color-glass-hi: rgba(255, 255, 255, 0.06);
+  --color-edge: rgba(174, 255, 102, 0.1); /* card borders */
+  --color-edge-hi: rgba(174, 255, 102, 0.28);
+
+  /* Accent — the green glow */
+  --color-lime: #a8e063;
+  --color-lime-hi: #cdff7a;
+  --color-lime-deep: #5c8f33;
+  --color-lime-dim: rgba(168, 224, 99, 0.14);
+
+  /* Ink */
+  --color-ink: #f1f5ec;
+  --color-ink-dim: #93a08d;
+  --color-ink-faint: #566050;
+
+  /* Semantic */
+  --color-ember: #e0745c; /* missed / destructive */
+  --color-gold: #ffd66b; /* PR celebrations only */
+  --color-rest: #6b7a94; /* rest-day cool gray-blue */
+  --color-alarm: #ff5040; /* rest-timer countdown ONLY */
+  --color-alarm-hi: #ff7a6b;
+  --shadow-alarm: 0 0 32px rgba(255, 80, 64, 0.45);
+
+  /* Type */
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Barlow', 'Helvetica Neue', sans-serif;
+
+  /* Shape + glow */
+  --radius-card: 1.25rem;
+  --shadow-glow: 0 0 24px rgba(168, 224, 99, 0.35);
+  --shadow-glow-soft: 0 0 40px rgba(168, 224, 99, 0.15);
+}
+
+html,
+body {
+  background: var(--color-bg0);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* iOS safe areas */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Display type: always condensed, tight, uppercase */
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+  font-weight: 700;
+}
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-ink-dim);
+}
+
+/* Glass card recipe — the only container style in the app.
+   Every card carries a faint breathing lime aura (opacity-only animation
+   on a pseudo-element: cheap to paint, tasteful amplitude). */
+.card {
+  background: var(--color-glass);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 26px rgba(168, 224, 99, 0.16);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: -1;
+  animation: card-breathe 6s ease-in-out infinite;
+}
+.card-active {
+  border-color: var(--color-edge-hi);
+  box-shadow: var(--shadow-glow-soft);
+}
+.card-active::before {
+  box-shadow: 0 0 36px rgba(168, 224, 99, 0.28);
+}
+@keyframes card-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* Living icons + numbers: slow glow-pulse for stat tiles */
+.icon-live {
+  display: inline-flex;
+  color: var(--color-lime);
+  filter: drop-shadow(0 0 6px rgba(168, 224, 99, 0.65));
+  animation: icon-live 3.2s ease-in-out infinite;
+}
+/* Numbers stay STATIC (Palmer's call) — glow only, no pulse/scale */
+.stat-live {
+  text-shadow: 0 0 16px rgba(168, 224, 99, 0.45);
+}
+@keyframes icon-live {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Streak flame: idle flicker */
+.flame-flicker {
+  animation: flame 2.6s ease-in-out infinite;
+  transform-origin: 50% 85%;
+  display: inline-flex;
+}
+@keyframes flame {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  22% {
+    transform: scale(1.06) rotate(-2deg);
+    opacity: 0.92;
+  }
+  41% {
+    transform: scale(0.97) rotate(1.5deg);
+    opacity: 1;
+  }
+  63% {
+    transform: scale(1.04) rotate(-1deg);
+    opacity: 0.95;
+  }
+  82% {
+    transform: scale(0.99) rotate(2deg);
+    opacity: 1;
+  }
+}
+
+/* Rest timer escalation pulses (opacity/scale only) */
+.pulse-calm {
+  animation: alarm-pulse 3s ease-in-out infinite;
+}
+.pulse-warn {
+  animation: alarm-pulse 1.4s ease-in-out infinite;
+}
+.pulse-critical {
+  animation: alarm-pulse 0.55s ease-in-out infinite;
+}
+@keyframes alarm-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+.thump {
+  animation: thump 0.5s ease-out;
+}
+@keyframes thump {
+  0% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Numeric stats read as instrumentation */
+.stat {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Ambient glow orb — the signature background element */
+.glow-orb {
+  position: fixed;
+  width: 65vmin;
+  height: 65vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(168, 224, 99, 0.13) 0%, rgba(168, 224, 99, 0.04) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: breathe 7s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* Focus visibility (keyboard nav) */
+:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-orb {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hide scrollbars on horizontal strips, keep scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
