@@ -173,6 +173,20 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
   URL Configuration) or password-reset emails point at localhost:3000.
   This is dashboard config, not code.
 
+## Demo mode (public portfolio copy)
+
+- `src/lib/demoSeed.ts` — `isDemoMode()` is true when `VITE_DEMO=true`
+  OR (production build AND no `VITE_SUPABASE_URL`). `seedDemoData()` runs
+  once (guard key `forge.demoSeeded`) after `repo.ready()` in main.tsx,
+  writing ~6 weeks of realistic sample workouts/sets/stats/PRs to
+  localStorage. Today is left unlogged so a visitor lands on "Start
+  workout". Home shows a "Live demo · sample data" badge.
+- **Deployment**: the same repo deployed as a SECOND Vercel project with
+  NO env vars = the demo (localStorage, no login, per-browser sandbox).
+  The real app is the Vercel project WITH the Supabase env vars. One
+  codebase, two projects. Real app never triggers demo seeding.
+- Test locally: `VITE_SUPABASE_URL="" VITE_SUPABASE_ANON_KEY="" VITE_DEMO=true npm run dev`.
+
 ## ⚠ OPEN ISSUES (as of handover, 2026-07-18)
 
 1. **Password-reset email delivery is NOT verified working.** Site URL +

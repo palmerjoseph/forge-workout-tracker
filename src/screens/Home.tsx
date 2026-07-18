@@ -8,6 +8,7 @@ import { adherence, currentStreak, totalVolume } from '../lib/stats'
 import { tierFor, trainerContext, trainerMessage } from '../lib/trainer'
 import { todayKey, usePrs, useRotation, useRoutines, useSettings, useStats, useWorkouts } from '../lib/hooks'
 import { supabaseClient } from '../lib/repo/supabase'
+import { isDemoMode } from '../lib/demoSeed'
 import { dayName } from '../lib/types'
 
 const fadeUp = {
@@ -127,6 +128,11 @@ export function Home() {
   return (
     <div className="flex flex-col gap-4 pt-6">
       <motion.header {...fadeUp} transition={{ duration: 0.4 }}>
+        {isDemoMode() && (
+          <span className="inline-flex items-center gap-1.5 mb-2 px-2.5 py-1 rounded-full bg-lime-dim border border-edge-hi text-lime-hi text-[0.65rem] font-semibold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-lime icon-live" /> Live demo · sample data
+          </span>
+        )}
         <p className="eyebrow">{format(new Date(), 'EEEE, MMMM d')}</p>
         <h1 className="display text-4xl mt-1">
           Welcome back, <span className="text-lime" style={{ textShadow: '0 0 18px rgba(168,224,99,0.5)' }}>{settings.name}</span>
