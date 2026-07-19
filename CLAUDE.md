@@ -118,7 +118,8 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
   forge-cleanup only sweeps in-progress rows with `finished_at IS NULL`.
 - **Day detail**: tap any calendar day → sheet (raw sets <60 days,
   permanent aggregates after) + "Adjust this workout".
-- **Custom routines**: `migration-v2.sql` dropped the A/B/C check.
+- **Custom routines**: `migration-v2.sql` dropped the A/B/C check (now
+  folded into `schema.sql` itself — see v3.3).
   New routines get letters D, E…; `dayName()` in types.ts resolves names.
   Rotation cycle is `rotation.cycle: string[]` (defaults to A/B/C),
   editable chips in Plan. Deleting a routine also removes it from the cycle.
@@ -172,6 +173,42 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
 - Supabase Auth **Site URL** must be the production URL (Authentication →
   URL Configuration) or password-reset emails point at localhost:3000.
   This is dashboard config, not code.
+
+## v3.3 fixes (2026-07-18, code review — Opus)
+
+All four came out of a full-workspace review; the two frontend fixes land
+in the **same shared codebase**, so the real app AND the public demo get
+them from one build (the demo's `demoSeed.ts` was already correct).
+
+- **Rules-of-hooks crash (Train `ActiveWorkout`)**: `useInvalidate`/`useRef`/
+  `useEffect` used to sit AFTER `if (!routine) return null`. If `routine`
+  resolved undefined on a later render (its routine deleted mid-session, or
+  the routines query returning without that type) React rendered fewer hooks
+  → hard crash of the Train tab. Now ALL hooks run first; `planned` etc. are
+  derived defensively (empty when no routine) and the guard sits immediately
+  before the JSX `return`. **Invariant: never add a hook below that guard.**
+- **Inflated in-session PR count**: `detectPr` reads history from the React
+  Query cache, which isn't invalidated by `saveSet`, so every working set
+  above the old best re-flagged as a PR (3 sets at a new weight → "3 PRs",
+  while `useFinishWorkout` records only 1). Two-part fix: (1) `logRow` folds
+  the session's already-logged sets into the comparison history via
+  `aggregateSets`, but ONLY once the exercise has real history — a first-ever
+  session stays baseline; (2) the displayed `prCount` (ActiveWorkout +
+  DoneToday) counts DISTINCT exercises with a PR, matching the one-PR-per-
+  exercise model that gets persisted.
+- **`schema.sql` A/B/C check** dropped: `forge_routines.day_type` was
+  `check (day_type in ('A','B','C'))`, which broke a FRESH install — seeding
+  the Mixed day ('M') and custom routines (D/E) threw and aborted `ready()`
+  before rotation/settings were written. `schema.sql` now declares free-text
+  `day_type` AND self-heals older installs with
+  `drop constraint if exists forge_routines_day_type_check`. This folds
+  `migration-v2.sql` into `schema.sql` — pasting `schema.sql` alone is now
+  enough; `migration-v2.sql` is kept only for reference / already-migrated DBs.
+- **`forge-reports` swallowed real DB errors**: `persistAndSend` treated ANY
+  insert error as "already sent" and skipped Telegram+email. Now only Postgres
+  `23505` (the unique(kind, period_start) dedup across the two cron hours) is
+  treated as already-sent; any other error is reported as `NOT sent` with its
+  code + message instead of silently dropping the delivery.
 
 ## Demo mode (public portfolio copy)
 

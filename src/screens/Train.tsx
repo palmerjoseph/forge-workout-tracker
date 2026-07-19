@@ -5,6 +5,7 @@ import { Card, GlowButton, Sheet, Stepper } from '../components/ui'
 import { ExerciseIcon, IconCheck, IconEdit, IconMoon, IconPlus, IconTimer, IconTrophy, IconX } from '../components/icons'
 import { RestTimer } from '../components/RestTimer'
 import { scheduleFor } from '../lib/rotation'
+import { aggregateSets } from '../lib/stats'
 import {
   detectPr,
   qk,
@@ -132,7 +133,7 @@ function DoneToday({ workout, onExtra, onEdit }: { workout: Workout; onExtra: (d
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const working = sets.filter((s) => !s.isWarmup)
   const volume = working.reduce((sum, s) => sum + s.weightLbs * s.reps, 0)
-  const prCount = sets.filter((s) => s.isPr).length
+  const prCount = new Set(sets.filter((s) => s.isPr).map((s) => s.exerciseId)).size
   const byExercise = new Map<string, SetLog[]>()
   for (const s of working) byExercise.set(s.exerciseId, [...(byExercise.get(s.exerciseId) ?? []), s])
 
@@ -254,6 +255,7 @@ function ActiveWorkout({ workout, resetSignal }: { workout: Workout; resetSignal
   const [resting, setResting] = useState(false)
 
   const isEdit = !!workout.finishedAt
+  const inv = useInvalidate()
 
   useEffect(() => {
     if (isEdit) return
@@ -261,11 +263,16 @@ function ActiveWorkout({ workout, resetSignal }: { workout: Workout; resetSignal
     return () => clearInterval(t)
   }, [workout.startedAt, isEdit])
 
+  // The routine can be absent (deleted while its workout is open, or the
+  // routines query still resolving). Derive everything defensively so ALL
+  // hooks below run unconditionally, then bail out just before render —
+  // hooks after an early return are a rules-of-hooks crash waiting to happen.
   const routine = routines?.find((r) => r.dayType === workout.dayType)
-  if (!routine) return null
-  const planned = routine.exercises
-    .filter((e) => !e.challengeOnly || (routine.challengeUnlocked && routine.challengeEnabled))
-    .sort((a, b) => a.order - b.order)
+  const planned = routine
+    ? routine.exercises
+        .filter((e) => !e.challengeOnly || (routine.challengeUnlocked && routine.challengeEnabled))
+        .sort((a, b) => a.order - b.order)
+    : []
 
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const loggedByExercise = new Map<string, SetLog[]>()
@@ -279,15 +286,15 @@ function ActiveWorkout({ workout, resetSignal }: { workout: Workout; resetSignal
   const workingLogged = sets.filter((s) => !s.isWarmup)
   const targetWorking = planned.reduce((sum, p) => sum + p.targetSets, 0)
   const coveredExercises = planned.filter((p) => (loggedByExercise.get(p.exerciseId) ?? []).some((s) => !s.isWarmup)).length
-  const isComplete = coveredExercises === planned.length && workingLogged.length >= Math.ceil(targetWorking * 0.8)
+  const isComplete = !!routine && coveredExercises === planned.length && workingLogged.length >= Math.ceil(targetWorking * 0.8)
 
   const volume = workingLogged.reduce((sum, s) => sum + s.weightLbs * s.reps, 0)
-  const prCount = sets.filter((s) => s.isPr).length
+  // One PR per exercise: a session can flag several sets, but the recorded PR
+  // (and this celebration count) is per-exercise — matching useFinishWorkout.
+  const prCount = new Set(sets.filter((s) => s.isPr).map((s) => s.exerciseId)).size
   const mins = Math.floor(elapsed / 60)
   const restSec = settings?.restTimerSec ?? 90
   const warmupOnly = sets.length > 0 && workingLogged.length === 0
-
-  const inv = useInvalidate()
 
   /** Save-or-discard: with sets, finish/recompute; with ZERO sets the
    *  workout is empty, so "saving" means deleting it — there is nothing
@@ -324,6 +331,8 @@ function ActiveWorkout({ workout, resetSignal }: { workout: Workout; resetSignal
     if (workingLogged.length + 1 >= targetWorking) return
     setResting(true)
   }
+
+  if (!routine) return null
 
   return (
     <div className="pt-6 flex flex-col gap-4">
@@ -522,7 +531,20 @@ function ExerciseLogger({
 
   const logRow = async (idx: number) => {
     const row = setRows[idx]
-    const isPr = !row.isWarmup && detectPr({ weightLbs: row.weight, reps: row.reps }, stats, prs, exercise.id) !== null
+    let isPr = false
+    if (!row.isWarmup) {
+      // Fold sets already logged this session into the history so a second
+      // working set at the same weight doesn't re-flag as a fresh PR. Only
+      // once the exercise has real history, though — a first-ever session
+      // stays baseline (never a PR), per detectPr's contract.
+      const hasHistory = stats.some((h) => h.exerciseId === exercise.id) || prs.some((p) => p.exerciseId === exercise.id)
+      const priorWorking = logged.filter((ls) => !ls.isWarmup)
+      const history =
+        hasHistory && priorWorking.length
+          ? [...stats, { id: 'session', ...aggregateSets(workout.id, workout.date, exercise.id, priorWorking) }]
+          : stats
+      isPr = detectPr({ weightLbs: row.weight, reps: row.reps }, history, prs, exercise.id) !== null
+    }
     const s: SetLog = {
       id: uid(),
       workoutId: workout.id,

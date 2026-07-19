@@ -127,9 +127,15 @@ function reportHtml(title: string, periodLabel: string, cur: ReturnType<typeof s
 }
 
 async function persistAndSend(db: ReturnType<typeof createClient>, kind: string, periodStart: string, periodEnd: string, title: string, headline: string, html: string, telegramText: string) {
-  // unique (kind, period_start) makes this idempotent across the two cron hours
+  // unique (kind, period_start) makes this idempotent across the two cron hours.
+  // 23505 = that duplicate (the other cron hour already sent it) — expected.
+  // Any OTHER error is a real failure: surface it instead of silently skipping
+  // delivery and pretending the report was sent.
   const { error } = await db.from('forge_reports').insert({ kind, period_start: periodStart, period_end: periodEnd, title, headline, html })
-  if (error) return `${kind}: already sent (${error.code})`
+  if (error) {
+    if (error.code === '23505') return `${kind}: already sent (${error.code})`
+    return `${kind}: NOT sent — db error ${error.code ?? '?'}: ${error.message}`
+  }
 
   const delivery: string[] = []
   const tg = Deno.env.get('TELEGRAM_BOT_TOKEN')

@@ -17,14 +17,19 @@ create table if not exists forge_exercises (
   notes text
 );
 
+-- day_type is free text: the seeded A/B/C days, the built-in Mixed day
+-- ('M'), and any user-created routines (D, E, …) all live here.
 create table if not exists forge_routines (
-  day_type text primary key check (day_type in ('A','B','C')),
+  day_type text primary key,
   name text not null,
   est_minutes int not null default 40,
   challenge_unlocked boolean not null default false,
   challenge_enabled boolean not null default false,
   exercises jsonb not null default '[]'
 );
+-- Self-heal older installs created with the original A/B/C check, so
+-- seeding the Mixed day and custom routines never hits a constraint.
+alter table forge_routines drop constraint if exists forge_routines_day_type_check;
 
 create table if not exists forge_workouts (
   id uuid primary key,
