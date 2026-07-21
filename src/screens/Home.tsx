@@ -61,9 +61,14 @@ export function Home() {
     : 0
   const doneToday = workouts.find((w) => w.date === today && (w.status === 'completed' || w.status === 'partial'))
 
-  // This week (Mon–Sun)
-  const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
-  const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  // This week (Mon–Sun) — but the public demo uses a rolling 7-day window so the
+  // Home tiles never show a screenful of zeros on an early-week (e.g. Monday) visit,
+  // while today stays open for "Start workout". Real app keeps the calendar week.
+  const demoWeek = isDemoMode()
+  const weekStart = demoWeek
+    ? format(subDays(new Date(), 6), 'yyyy-MM-dd')
+    : format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const weekEnd = demoWeek ? today : format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
   const weekPlanned = upcomingSchedule(rotation, weekStart, 7)
     .filter((d) => d.dayType !== 'rest')
     .map((d) => d.date)
