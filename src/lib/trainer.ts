@@ -1,5 +1,6 @@
-/* The trainer voice — firm, honest, respects that Palmer is busy.
-   Rule-based tiers keyed off adherence and trend. No LLM, no cost.
+/* The trainer voice — firm, honest, respects that the athlete is busy.
+   Addresses the lifter by their settings name ({name}); no identity is
+   hardcoded. Rule-based tiers keyed off adherence and trend. No LLM, no cost.
    Tone contract: direct sentences, no exclamation spam, no empty hype,
    call out slacking plainly, give credit only when earned. */
 
@@ -14,7 +15,7 @@ export function tierFor(adherencePct: number, volumeTrendPct: number): Tier {
 
 const BANKS: Record<Tier, string[]> = {
   slacking: [
-    "Palmer, let's be honest — this week got away from you. {done} of {planned} sessions. You know the fix: show up today.",
+    "{name}, let's be honest — this week got away from you. {done} of {planned} sessions. You know the fix: show up today.",
     "{done} of {planned}. That's not a program, that's a coincidence. One workout today turns this around.",
     'The calendar doesn\'t lie: {done} of {planned}. You\'re better than this week suggests. Prove it today.',
   ],
@@ -24,7 +25,7 @@ const BANKS: Record<Tier, string[]> = {
     "Half-committed weeks produce half results. {done} of {planned}. Today's workout is the one that matters.",
   ],
   steady: [
-    "{done} of {planned} — solid, consistent work. Consistency is what builds at 42. Keep the chain going.",
+    "{done} of {planned} — solid, consistent work. Consistency is what builds real strength. Keep the chain going.",
     "You're showing up: {done} of {planned}. Now nudge the weights. Same effort, slightly heavier.",
     'Good rhythm this week — {done} of {planned}. Boring consistency beats heroic bursts. Stay boring.',
   ],
@@ -36,18 +37,18 @@ const BANKS: Record<Tier, string[]> = {
   crushing: [
     '{done} of {planned} with volume climbing {trend}%. This is the best stretch you\'ve had. Do not overreach — recover as hard as you train.',
     'Full attendance, rising volume. Textbook. The only threat now is doing too much — keep sessions at 45 and sleep.',
-    "Volume up {trend}%, all sessions in. That's real, measurable progress, Palmer. Log it and stay hungry.",
+    "Volume up {trend}%, all sessions in. That's real, measurable progress, {name}. Log it and stay hungry.",
   ],
 }
 
 const REST_DAY_LINES = [
   'Rest day. Growth happens now, not in the gym. Eat, walk, sleep.',
-  "Planned rest — take it seriously. Recovery is training you can't skip at 42.",
+  "Planned rest — take it seriously. Recovery is training you can't skip.",
   'Off day. If you feel guilty, take a walk. The barbell will be there tomorrow.',
 ]
 
 const FIRST_TIME_LINES = [
-  "Day one, Palmer. No history to judge — yet. The only bad workout is the one that doesn't happen.",
+  "Day one, {name}. No history to judge — yet. The only bad workout is the one that doesn't happen.",
   'Clean slate. Every number you log from here on is a baseline to beat.',
   'Welcome to the program. Start today and give me something to hold you to.',
 ]
@@ -59,13 +60,17 @@ export function trainerMessage(opts: {
   planned: number
   trendPct: number
   dateSeed: string
+  name?: string
   isRestDay?: boolean
   isFirstTime?: boolean
 }): string {
-  if (opts.isFirstTime) return pick(FIRST_TIME_LINES, opts.dateSeed)
-  if (opts.isRestDay) return pick(REST_DAY_LINES, opts.dateSeed)
-  const line = pick(BANKS[opts.tier], opts.dateSeed)
+  const line = opts.isFirstTime
+    ? pick(FIRST_TIME_LINES, opts.dateSeed)
+    : opts.isRestDay
+      ? pick(REST_DAY_LINES, opts.dateSeed)
+      : pick(BANKS[opts.tier], opts.dateSeed)
   return line
+    .replace(/\{name\}/g, opts.name?.trim() || 'there')
     .replace(/\{done\}/g, String(opts.done))
     .replace(/\{planned\}/g, String(opts.planned))
     .replace(/\{trend\}/g, String(Math.abs(Math.round(opts.trendPct))))

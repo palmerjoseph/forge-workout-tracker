@@ -6,16 +6,17 @@ import type { ExerciseStat, PrRecord, SetLog, Workout } from './types'
 
 /* ─── Demo mode ───────────────────────────────────────────────
    When FORGE is deployed WITHOUT Supabase keys (the public portfolio
-   copy), it runs on localStorage. This module fills that copy with a
-   few weeks of realistic sample training so every visitor immediately
-   sees full charts, a lived-in calendar, PRs, and streak — the app at
-   its best — in their own private browser sandbox.
+   copy), it runs on localStorage. This module fills that copy with
+   several months of realistic sample training so every visitor
+   immediately sees full charts (incl. the 6M/1Y ranges), a lived-in
+   calendar, a long PR history, and a strong streak — the app at its
+   best — in their own private browser sandbox.
 
    The real app (which has Supabase keys) never triggers this. Local dev
    stays empty unless VITE_DEMO=true is set. */
 
-const DEMO_FLAG = 'forge.demoSeeded'
-const DAYS = 42
+const DEMO_FLAG = 'forge.demoSeeded.v2' // bumped: forces returning demo visitors to re-seed
+const DAYS = 210 // ~7 months of history → unlocks 6M/1Y ranges, lived-in calendar
 
 export function isDemoMode(): boolean {
   if (import.meta.env.VITE_DEMO === 'true') return true
@@ -73,10 +74,17 @@ export function seedDemoData(): void {
   const prs: PrRecord[] = []
 
   let sessionCount = 0
-  const skipDays = new Set([31, 17]) // older missed sessions, for a realistic calendar
-  const partialDays = new Set([23, 9]) // a couple of partial sessions
+  // Scatter a realistic handful of missed / partial sessions across the
+  // whole span, but keep the most recent ~2 weeks clean so the current
+  // streak reads strong. (~7 misses, ~11 partials over 210 days.)
+  const skipDays = new Set<number>()
+  const partialDays = new Set<number>()
+  for (let d = DAYS; d > 12; d--) {
+    if (d % 29 === 0) skipDays.add(d)
+    else if (d % 19 === 0) partialDays.add(d)
+  }
 
-  // Walk from 42 days ago up to YESTERDAY. Today is intentionally left
+  // Walk from DAYS days ago up to YESTERDAY. Today is intentionally left
   // open so a visitor lands on "Start workout" and can log live.
   for (let d = DAYS; d >= 1; d--) {
     const dateObj = subDays(new Date(), d)
@@ -100,9 +108,10 @@ export function seedDemoData(): void {
       const ex = exById.get(re.exerciseId)
       if (!ex) continue
       const base = baseFor(re.exerciseId, ex.equipment)
-      // Gentle upward progression → realistic strength trend + periodic PRs
-      const bump = ex.equipment === 'barbell' ? 10 : ex.equipment === 'dumbbell' ? 5 : 0
-      const progression = Math.floor(sessionCount / 6) * bump
+      // Gentle upward progression proportional to the lift (~+33% across the
+      // whole span) → a believable strength trend + a steady trickle of PRs,
+      // and numbers that stay realistic on small lifts (e.g. lateral raises).
+      const progression = base * 0.015 * Math.floor(sessionCount / 6)
 
       const exSets: SetLog[] = []
       let setNo = 0
@@ -112,7 +121,7 @@ export function seedDemoData(): void {
       }
       for (let s = 0; s < re.targetSets; s++) {
         setNo++
-        const weight = ex.isTimed ? 0 : base + progression
+        const weight = ex.isTimed ? 0 : Math.round((base + progression) / 5) * 5
         exSets.push(mkSet(wid, ex.id, setNo, weight, re.targetReps, false, started))
       }
 
@@ -153,6 +162,18 @@ export function seedDemoData(): void {
   localStorage.setItem('forge.sets', JSON.stringify(sets))
   localStorage.setItem('forge.stats', JSON.stringify(stats))
   localStorage.setItem('forge.prs', JSON.stringify(prs))
+  // Neutral demo identity (no real name) — overrides the 'Palmer' default so
+  // the public showcase greets a generic athlete.
+  localStorage.setItem(
+    'forge.settings',
+    JSON.stringify({
+      name: 'Alex',
+      timezone: 'America/Los_Angeles',
+      weeklyReports: true,
+      monthlyReports: true,
+      restTimerSec: 90,
+    }),
+  )
   localStorage.setItem(DEMO_FLAG, '1')
 }
 

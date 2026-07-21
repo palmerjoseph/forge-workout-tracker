@@ -98,6 +98,7 @@ export function Home() {
     planned: week.planned,
     trendPct,
     dateSeed: today,
+    name: settings.name,
     isRestDay: sched.dayType === 'rest' && !doneToday,
     isFirstTime: workouts.length === 0,
   })
