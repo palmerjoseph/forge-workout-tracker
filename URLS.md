@@ -27,6 +27,7 @@ Quick reference for the two live versions of the app.
 ### Behind the scenes (for reference)
 
 - **Both come from the same GitHub repo:** https://github.com/palmerjoseph/forge-workout-tracker
-- **Vercel projects:** `forge-workout` (real) and `forge-demo` (demo) — separate projects, same Vercel account.
-- The difference is only the environment variables: the real project has the Supabase keys; the demo project has none, which is what turns off login and loads sample data.
+- **Vercel projects:** `forge-workout` (real) and `forge-demo` (demo) — separate projects, same Vercel account. `forge-demo` is **CLI-deployed** (not git-connected).
+- The difference is the environment variables: the real project has the Supabase keys; the demo project has none → keyless build → login off + sample data seeded.
+- **Deploying the demo:** the local `.vercel` here is linked to the REAL `forge-workout`, so to deploy the demo, point `.vercel/project.json` at `forge-demo` (projectId `prj_Lc3DMajEBs5olvKB2aPeTwMeQXhG`), run `npx vercel --prod --force`, then swap `.vercel` back. **Use `--force`** (avoids a stale cached build) — and the committed **`.vercelignore`** (excludes `.env`/`.env.*`) is REQUIRED: the Vercel CLI otherwise uploads the local gitignored `.env` (real Supabase keys) and inlines it, which brings the login back. The demo greets a neutral "Alex" and, in demo mode, the Home weekly tiles use a rolling 7-day window so they're never all-zeros.
 - Full technical details + maintenance notes live in `CLAUDE.md` and `docs/DESIGN-SYSTEM.md`.
