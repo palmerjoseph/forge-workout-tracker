@@ -63,7 +63,11 @@ npx vercel env add VITE_SUPABASE_URL production      # paste the URL
 npx vercel env add VITE_SUPABASE_ANON_KEY production # paste the key
 npx vercel --prod
 ```
-Copy the production URL it prints (e.g. `https://forge-xyz.vercel.app`).
+Copy the production URL it prints (e.g. `https://forge-xyz.vercel.app`). For
+the separate public portfolio demo, the intended public address is
+`https://forgedemo.cleverstack.co`; its Vercel project is `forge-demo` and it
+must remain keyless. See [URLS.md](URLS.md) before changing either Vercel
+project or its domains.
 
 ## 5 · iPhone install (~1 min)
 

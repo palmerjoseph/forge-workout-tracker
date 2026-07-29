@@ -23,13 +23,17 @@ Palmer's working preferences (non-negotiable):
 - Age-appropriate training: moderate volume, joint-friendly; intensity
   increases only via the opt-in Challenge mode (never auto-escalate).
 
-## Live deployment (as of 2026-07-18)
+## Live deployment (as of 2026-07-29)
 
-- **Production URL:** https://forge-workout-palmer-joseph-ai.vercel.app
+- **Canonical personal URL:** https://forge.cleverstack.co
   (Vercel project `forge-workout`, deployment protection disabled — FORGE
-  has its own auth). Redeploy: `npx vercel --prod`.
+  has its own auth). The generated Vercel address
+  `https://forge-workout-palmer-joseph-ai.vercel.app` remains a fallback.
+  Redeploy: `npx vercel --prod`.
 - **Supabase project ref:** `iegewntownzguykxtrth` — named
-  "Costco & Workout Tracker", shared with the Costco tracker.
+  "Costco & Workout Tracker", shared with the Costco tracker. It is owned
+  through the `palmerjosephai@gmail.com` Supabase organization; do not create a
+  replacement project or rotate the Vercel Supabase environment variables.
 - Cron jobs `forge-reports-16`, `forge-reports-17`, `forge-cleanup` are
   scheduled; Telegram + Resend delivery verified end-to-end.
 
@@ -170,9 +174,9 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
   (there is nothing to save; leaving it in-progress was the stuck-state
   bug). "Done editing" label adapts; nav re-tap discards empty sessions
   (live OR edit) but NEVER finishes a live session that has sets.
-- Supabase Auth **Site URL** must be the production URL (Authentication →
-  URL Configuration) or password-reset emails point at localhost:3000.
-  This is dashboard config, not code.
+- Supabase Auth **Site URL** is `https://forge.cleverstack.co`; Redirect URLs
+  include that canonical address plus the Vercel fallback. This is dashboard
+  config, not code. The app login is `palmerjosephai@gmail.com`.
 
 ## v3.3 fixes (2026-07-18, code review — Opus)
 
@@ -226,16 +230,16 @@ them from one build (the demo's `demoSeed.ts` was already correct).
 
 ## ⚠ OPEN ISSUES (as of handover, 2026-07-18)
 
-1. **Password-reset email delivery is NOT verified working.** Site URL +
-   Redirect URL were set correctly in Supabase (Authentication → URL
-   Configuration), but sends were still failing — most likely the
-   built-in mailer's 2-emails/hour rate limit during heavy same-day
-   testing, possibly an unclicked "Save changes", possibly SMTP needed.
-   The app now surfaces the real error message on the login screen.
-   **Recommended fix**: enable Custom SMTP via Resend (Authentication →
-   Emails → SMTP: host `smtp.resend.com`, port 465, user `resend`,
-   password = Resend API key, sender `onboarding@resend.dev`). Then test
-   the full flow: Forgot password → email → in-app "Set a new password".
+1. **Password recovery is live, but email delivery remains constrained by the
+   built-in Supabase mailer.** On 2026-07-29 the app was fixed and deployed so
+   a recovery link preserves recovery mode until the user submits a replacement
+   password; it can no longer enter the app first. Supabase's default mailer is
+   restricted to organization-team addresses and two Auth emails per hour. The
+   login screen surfaces its delivery error. If delivery becomes unreliable,
+   enable Custom SMTP via Resend (Authentication → Emails → SMTP: host
+   `smtp.resend.com`, port 465, user `resend`, password = Resend API key,
+   sender `onboarding@resend.dev`). Then test the full flow: Forgot password →
+   email → in-app "Set a new password".
 2. Palmer will request further changes over time — all future work is
    done with **Opus**. Read this file + docs/DESIGN-SYSTEM.md fully
    before touching anything.

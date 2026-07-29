@@ -7,6 +7,7 @@ Telegram + Resend), zero recurring costs, no AI API calls.
 - **Getting it running / one-time setup** → [SETUP.md](SETUP.md)
 - **Architecture, decisions, maintenance recipes** → [CLAUDE.md](CLAUDE.md)
 - **Visual contract (tokens, icons, charts, motion)** → [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md)
+- **Live URLs, public-demo boundary, and domain handoff** → [URLS.md](URLS.md)
 
 ```bash
 npm install

@@ -17,6 +17,19 @@ function touchSession() {
   localStorage.setItem(LAST_SEEN_KEY, String(Date.now()))
 }
 
+/** Supabase recovery links may carry `type=recovery` in either the query
+ * string (PKCE) or hash (implicit flow). Keep the recovery form in front of
+ * any already-created session until the password is explicitly changed. */
+function isRecoveryRedirect(): boolean {
+  const search = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  return search.get('type') === 'recovery' || hash.get('type') === 'recovery'
+}
+
+function clearRecoveryRedirect() {
+  window.history.replaceState({}, document.title, window.location.pathname)
+}
+
 /** Blocks the app behind Supabase email/password login when Supabase is
  *  configured. In local (no-env) mode it renders children directly.
  *  Also handles the password-recovery redirect (#type=recovery). */
@@ -32,6 +45,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!client) return
+    // `getSession()` can resolve before Supabase emits PASSWORD_RECOVERY.
+    // Preserve recovery mode from the URL so that race cannot open the app
+    // before the user has chosen a replacement password.
+    let recoveryFlow = isRecoveryRedirect()
+    const showRecovery = () => {
+      recoveryFlow = true
+      setStatus('recovery')
+    }
     // RLS blocks reads/seeding until a session exists, so first-run
     // seeding must happen AFTER auth — never at module load.
     const enter = async (hasSession: boolean) => {
@@ -50,9 +71,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
       }
       setStatus('authed')
     }
-    client.auth.getSession().then(({ data }) => enter(!!data.session))
+    if (recoveryFlow) showRecovery()
+    client.auth.getSession().then(({ data }) => {
+      if (recoveryFlow) showRecovery()
+      else enter(!!data.session)
+    })
     const { data: sub } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') setStatus('recovery')
+      if (event === 'PASSWORD_RECOVERY') showRecovery()
+      else if (recoveryFlow) showRecovery()
       else if (session) enter(true)
       else setStatus('anon')
     })
@@ -102,6 +128,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (error) setError('Could not update the password. The link may have expired — request a new one.')
     else {
       touchSession()
+      clearRecoveryRedirect()
       setPassword('')
       setPassword2('')
       setStatus('authed')
