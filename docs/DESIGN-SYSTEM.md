@@ -80,6 +80,41 @@ from size/weight/tokens, not new fonts.
 - Touch targets ≥ 44×44 (`w-11 h-11` minimum for tap controls).
 - iOS safe areas via `.pt-safe` / `.pb-safe`.
 
+## 5b · App shell & scrolling (structural — not a style choice)
+
+The app is a **fixed-height shell with one internal scroller**. The document
+itself never scrolls (`html, body { height:100%; overflow:hidden }`).
+
+```
+<div class="h-full flex flex-col overflow-hidden">   ← the shell
+  <main class="flex-1 min-h-0 overflow-y-auto">      ← THE scroller
+    <div class="mx-auto max-w-107 px-4 pt-safe pb-8">  ← content
+  <BottomNav />                                      ← normal flow, shrink-0
+```
+
+Why: iOS Safari resolves `position: fixed` against the *layout* viewport,
+which it does not keep in sync with the *visual* viewport during flings,
+rubber-band overscroll, or URL-bar collapse — and `backdrop-filter` makes it
+worse by promoting the element to a main-thread-rasterized layer. A fixed,
+blurred bottom nav drifted into the middle of the screen and the page
+scrolled past its own content into a black void (fixed 2026-08-20, CLAUDE.md
+§v3.4).
+
+Rules:
+
+- **No `position: fixed` for chrome anchored to the viewport.** The bottom
+  nav is a plain flex child — solid `bg-bg0`, top `border-edge`, `pb-safe`,
+  no blur. Nothing scrolls behind it, so glass there would render nothing.
+- Full-screen overlays (`Sheet`, `RestTimer`) stay `fixed inset-0` **via a
+  portal to `document.body`** — that is correct and now more stable.
+- Anything reading or setting scroll uses the `<main>` container, never
+  `window.scrollY` / `window.scrollTo`.
+- `min-h-0` on the scroller is required; without it the flex child refuses
+  to shrink and scrolling silently dies.
+- Content wrapper ends in `pb-8`. Do not re-add nav clearance (`pb-28`) —
+  the nav no longer overlays anything and it would read as dead space at the
+  end of every scroll.
+
 ## 6 · Icons — ONE language (`src/components/icons.tsx`)
 
 Never import an icon pack. Every icon is hand-drawn in that one file:
@@ -161,3 +196,4 @@ second, one-off markup never.
 - [ ] Reduced motion respected (no inline animations that bypass the global kill)
 - [ ] Charts: single-series lime OR the validated 5-color set, labels in ink tokens
 - [ ] Looks right at 375px and desktop; no horizontal page scroll
+- [ ] Scrolls inside `<main>` only — document still unscrollable, nav pinned at the bottom with no gap past the content (§5b)

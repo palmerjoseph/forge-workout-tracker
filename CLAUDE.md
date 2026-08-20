@@ -65,7 +65,8 @@ his Costco tracker. Do not split into a second project.
 ```
 src/
   index.css              Design tokens (@theme) — the visual source of truth
-  App.tsx                AuthGate → routes → BottomNav shell
+  App.tsx                AuthGate → fixed-height shell: <main> scroller
+                         + BottomNav in flow (see v3.4 — do NOT use fixed)
   components/
     icons.tsx            THE icon set (hand-drawn SVG, one language)
     ui.tsx               Primitives: Card, GlowButton, StatRing, Stepper,
@@ -214,6 +215,54 @@ them from one build (the demo's `demoSeed.ts` was already correct).
   treated as already-sent; any other error is reported as `NOT sent` with its
   code + message instead of silently dropping the delivery.
 
+## v3.4 — the app shell / scroll architecture (2026-08-20)
+
+Palmer reported the bottom nav floating in the middle of the screen on
+iPhone Safari, and being able to scroll far past the end of the content into
+a black void — intermittently.
+
+**Cause:** the app scrolled the DOCUMENT while the nav was
+`position: fixed; bottom-0` + `backdrop-blur-xl`. iOS Safari resolves
+`position: fixed` against the *layout* viewport, which it does not keep in
+sync with the *visual* viewport during flings, rubber-band overscroll, or
+URL-bar collapse; `backdrop-filter` additionally promotes the nav to a
+main-thread-rasterized layer that visibly drifts with the scroll and only
+snaps back when scrolling settles. Both symptoms are the same root cause.
+
+**Fix — the app is now a fixed-height shell with an internal scroller.**
+This is load-bearing structure, not styling:
+
+- `index.css`: `html, body { height:100%; overflow:hidden; overscroll-behavior:none }`
+  and `#root { height:100% }`. **The document never scrolls.**
+- `App.tsx`: `<div className="h-full flex flex-col overflow-hidden relative">`
+  → `<main ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">`
+  → inner `mx-auto max-w-107 px-4 pt-safe pb-8` wrapper → `<Routes>`, then
+  `<BottomNav />` as the last flex child.
+  `min-h-0` is REQUIRED — without it the flex child won't shrink and the
+  scroller silently stops scrolling.
+- `BottomNav`: normal flow, `shrink-0`, solid `bg-bg0`, no `fixed`, no
+  backdrop blur (nothing scrolls behind it any more). `pb-safe` stays.
+- **Scroll reset**: `App` scrolls the container to top on
+  `location.pathname` / `location.state?.reset` change — tab switches and
+  active-tab re-taps land at the top. (Idempotent, so it does not violate
+  the v3.1 stale-reset-signal invariant.)
+- `pullRefresh` takes `scrollRef` and listens on the CONTAINER
+  (`el.scrollTop`), not `window` — `window.scrollY` is now permanently 0, so
+  the old check would have fired the refresh on any downward drag anywhere.
+- `AuthGate`'s screens get their own `h-full overflow-y-auto` scroller
+  (inner `min-h-full flex items-center justify-center`), because a locked
+  document would otherwise trap the fields under the iOS keyboard.
+
+**Invariants going forward:**
+- NEVER add `position: fixed` for layout chrome anchored to the viewport
+  bottom, and never restore document scrolling. Full-screen overlays
+  (`Sheet`, `RestTimer`) stay `fixed inset-0` via portals — that is fine and
+  more stable now, and the portal requirement from v1 still stands.
+- Anything that needs the scroll position uses the `<main>` container, never
+  `window.scrollY` / `window.scrollTo`.
+- `pb-8` on the content wrapper replaced the old `pb-28`; the 7rem was nav
+  clearance and would now be dead space at the end of every scroll.
+
 ## Demo mode (public portfolio copy)
 
 - `src/lib/demoSeed.ts` — `isDemoMode()` is true when `VITE_DEMO=true`
@@ -267,6 +316,9 @@ them from one build (the demo's `demoSeed.ts` was already correct).
   judged (Home adherence + calendar "missed" both clamp to first workout).
 - **Sheets render through a portal** — the bottom nav creates a stacking
   trap otherwise. Keep it that way.
+- **The document never scrolls.** The app is a fixed-height shell and
+  `<main>` is the only scroller; the bottom nav is in normal flow, never
+  `position: fixed`. See §v3.4 and DESIGN-SYSTEM §5b before touching layout.
 
 ## Maintenance recipes
 
@@ -295,3 +347,8 @@ them from one build (the demo's `demoSeed.ts` was already correct).
 3. Reports: `curl -X POST '<fn-url>/forge-reports?force=weekly' -H 'x-forge-secret: …'`
    → Telegram + email arrive, report shows under Plan → Reports.
 4. iPhone PWA still standalone with safe areas intact.
+5. **Layout (iPhone Safari, not just the PWA):** fling-scroll the longest
+   screen (Progress) hard to the end several times — the nav must stay
+   pinned to the bottom, with no black gap past the content and no drift
+   mid-screen. Tab-switch from a deep-scrolled screen → lands at the top.
+   Pull-to-refresh fires at the top of a tab and NOT mid-page.

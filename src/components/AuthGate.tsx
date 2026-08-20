@@ -87,7 +87,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }, [])
 
   if (status === 'authed') return children
-  if (status === 'loading') return <div className="min-h-dvh bg-bg0" />
+  if (status === 'loading') return <div className="h-full bg-bg0" />
 
   const login = async () => {
     setBusy(true)
@@ -138,8 +138,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const input = 'w-full bg-glass border border-edge rounded-xl px-4 py-3.5 text-ink placeholder:text-ink-faint focus:border-edge-hi outline-none'
 
   return (
-    <div className="min-h-dvh flex items-center justify-center px-6 relative">
+    <div className="h-full overflow-y-auto overscroll-contain relative">
       <div className="glow-orb -top-[20vmin] -right-[20vmin]" />
+      <div className="min-h-full flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-85 relative z-10">
         <p className="eyebrow">{status === 'recovery' ? 'Set a new password' : 'Members only'}</p>
         <h1 className="display text-5xl mt-1 mb-6">
@@ -206,6 +207,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

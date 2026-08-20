@@ -41,13 +41,24 @@
   --shadow-glow-soft: 0 0 40px rgba(168, 224, 99, 0.15);
 }
 
+/* The DOCUMENT never scrolls — the app is a fixed-height shell with an
+   internal scroller (see App.tsx). This is deliberate and load-bearing:
+   iOS Safari mis-places `position: fixed` elements against the layout
+   viewport during flings / rubber-band overscroll / toolbar collapse,
+   which used to drift the bottom nav into the middle of the screen and
+   let the page scroll past its own content. No document scroll, no drift. */
 html,
 body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--color-bg0);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
+}
+#root {
+  height: 100%;
 }
 
 /* iOS safe areas */

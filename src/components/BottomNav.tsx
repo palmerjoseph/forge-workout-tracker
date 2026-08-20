@@ -11,10 +11,13 @@ const TABS = [
 export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
+  // The bar sits in normal flow at the bottom of the app shell — NOT
+  // position:fixed. iOS Safari drifts fixed + backdrop-filter layers during
+  // flings; nothing scrolls behind the bar now, so the blur bought nothing.
   return (
     <nav
       aria-label="Main"
-      className="fixed bottom-0 inset-x-0 z-40 flex justify-center bg-bg0/80 backdrop-blur-xl border-t border-edge"
+      className="shrink-0 z-40 flex justify-center bg-bg0 border-t border-edge"
     >
       <div className="flex w-full max-w-107 pb-safe">
         {TABS.map(({ to, label, icon: Icon }) => (

@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
 const THRESHOLD = 70
 
 /** Touch-only pull-to-refresh: drag down from the top of any tab to
- *  refetch everything. Renders the glow indicator; mount once in App. */
-export function PullToRefresh() {
+ *  refetch everything. Renders the glow indicator; mount once in App.
+ *  Listens on the app's scroll container (the document never scrolls, so
+ *  window.scrollY is permanently 0) — which also keeps gestures inside
+ *  portalled Sheets and the RestTimer from ever reaching this handler. */
+export function PullToRefresh({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
   const qc = useQueryClient()
   const [pull, setPull] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -13,17 +16,19 @@ export function PullToRefresh() {
   const pullRef = useRef(0)
 
   useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
     const setPullBoth = (v: number) => {
       pullRef.current = v
       setPull(v)
     }
     const onStart = (e: TouchEvent) => {
-      startY.current = window.scrollY <= 0 ? e.touches[0].clientY : null
+      startY.current = el.scrollTop <= 0 ? e.touches[0].clientY : null
     }
     const onMove = (e: TouchEvent) => {
       if (startY.current === null) return
       const dy = e.touches[0].clientY - startY.current
-      setPullBoth(dy > 0 && window.scrollY <= 0 ? Math.min(dy * 0.45, 110) : 0)
+      setPullBoth(dy > 0 && el.scrollTop <= 0 ? Math.min(dy * 0.45, 110) : 0)
     }
     const onEnd = async () => {
       if (startY.current === null) return
@@ -40,15 +45,15 @@ export function PullToRefresh() {
         setPullBoth(0)
       }
     }
-    window.addEventListener('touchstart', onStart, { passive: true })
-    window.addEventListener('touchmove', onMove, { passive: true })
-    window.addEventListener('touchend', onEnd)
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: true })
+    el.addEventListener('touchend', onEnd)
     return () => {
-      window.removeEventListener('touchstart', onStart)
-      window.removeEventListener('touchmove', onMove)
-      window.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
     }
-  }, [qc])
+  }, [qc, scrollRef])
 
   const active = pull > 0 || refreshing
   if (!active) return null
