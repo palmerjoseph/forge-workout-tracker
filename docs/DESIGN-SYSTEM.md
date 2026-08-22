@@ -83,7 +83,16 @@ from size/weight/tokens, not new fonts.
 ## 5b · App shell & scrolling (structural — not a style choice)
 
 The app is a **fixed-height shell with one internal scroller**. The document
-itself never scrolls (`html, body { height:100%; overflow:hidden }`).
+itself never scrolls (`html, body { height: var(--app-h); overflow:hidden }`).
+
+`--app-h` is the **real** viewport height, never `100%`: percentage heights
+resolve against the initial containing block, which on iOS excludes the strip
+under a collapsed toolbar / the safe-area insets — the shell came up ~100px
+short and left an unpainted black band below the nav (fixed 2026-08-22).
+It is declared `100%` → `100dvh` (`@supports`) in `index.css` and overridden
+with the measured pixel height by `src/lib/viewport.ts`, which also tracks
+the on-screen keyboard so the shell shrinks above it. Size the shell off that
+variable — never `100vh`, never `height: 100%`.
 
 ```
 <div class="h-full flex flex-col overflow-hidden">   ← the shell
@@ -111,6 +120,10 @@ Rules:
   `window.scrollY` / `window.scrollTo`.
 - `min-h-0` on the scroller is required; without it the flex child refuses
   to shrink and scrolling silently dies.
+- The shell fills the screen edge to edge: `viewport-fit=cover` in the
+  viewport meta, safe areas paid for by `pt-safe` (content) and `pb-safe`
+  (inside the nav) — so the nav's own `bg-bg0` paints the home-indicator
+  strip. Never let layout height come from anything but `--app-h`.
 - Content wrapper ends in `pb-8`. Do not re-add nav clearance (`pb-28`) —
   the nav no longer overlays anything and it would read as dead space at the
   end of every scroll.
@@ -196,4 +209,4 @@ second, one-off markup never.
 - [ ] Reduced motion respected (no inline animations that bypass the global kill)
 - [ ] Charts: single-series lime OR the validated 5-color set, labels in ink tokens
 - [ ] Looks right at 375px and desktop; no horizontal page scroll
-- [ ] Scrolls inside `<main>` only — document still unscrollable, nav pinned at the bottom with no gap past the content (§5b)
+- [ ] Scrolls inside `<main>` only — document still unscrollable, nav pinned at the bottom with no gap past the content, and the nav flush with the bottom of the screen on a real phone (§5b)

@@ -47,9 +47,21 @@
    viewport during flings / rubber-band overscroll / toolbar collapse,
    which used to drift the bottom nav into the middle of the screen and
    let the page scroll past its own content. No document scroll, no drift. */
+:root {
+  /* Screen height. `100%` is wrong on iOS (it resolves against the initial
+     containing block, which omits the toolbar / safe-area strip and leaves a
+     black band under the nav); dvh is right where supported, and
+     lib/viewport.ts overrides this with the measured pixel height. */
+  --app-h: 100%;
+}
+@supports (height: 100dvh) {
+  :root {
+    --app-h: 100dvh;
+  }
+}
 html,
 body {
-  height: 100%;
+  height: var(--app-h);
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--color-bg0);
@@ -58,7 +70,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 #root {
-  height: 100%;
+  height: var(--app-h);
 }
 
 /* iOS safe areas */

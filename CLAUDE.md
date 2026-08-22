@@ -92,6 +92,8 @@ src/
     hooks.ts             React Query hooks + useFinishWorkout (rolls up
                          stats, detects PRs, unlocks Challenge at 6 full
                          sessions of a day type)
+    viewport.ts          Publishes the REAL viewport height as --app-h
+                         (the shell's height — never 100% / 100vh)
     repo/                Storage abstraction:
       types.ts           Repo interface (the ONLY storage contract)
       local.ts           localStorage impl (no env vars → used automatically)
@@ -263,6 +265,34 @@ This is load-bearing structure, not styling:
 - `pb-8` on the content wrapper replaced the old `pb-28`; the 7rem was nav
   clearance and would now be dead space at the end of every scroll.
 
+## v3.5 — the shell must be the height of the SCREEN (2026-08-22)
+
+Two days after v3.4 Palmer reported a ~100px black band below the bottom nav
+on the iPhone: the nav sat above it and the app simply stopped there.
+
+**Cause:** v3.4 sized the shell with `html, body, #root { height: 100% }`.
+Percentage heights resolve against the *initial containing block*, which on
+iOS is NOT the visible screen — it omits the strip under a collapsed Safari
+toolbar / the safe-area insets. The shell was therefore correct-looking but
+short, and since nothing else paints down there the remainder read as a dead
+black gap.
+
+**Fix — the shell is sized off the measured viewport, via `--app-h`:**
+
+- `index.css`: `:root { --app-h: 100% }`, upgraded to `100dvh` inside
+  `@supports (height: 100dvh)`; `html, body, #root { height: var(--app-h) }`.
+- `src/lib/viewport.ts` (`trackViewportHeight()`, called once in `main.tsx`)
+  overrides `--app-h` on `<html>` with `visualViewport.height` in px, on
+  `resize` / `orientationchange` / `pageshow`. Pinch-zoom is ignored
+  (`visualViewport.scale > 1.01` falls back to `window.innerHeight`), so a
+  zoomed page never resizes the shell.
+- Bonus: because it tracks `visualViewport`, the shell now shrinks above the
+  on-screen keyboard instead of leaving fields hidden behind it.
+
+**Invariants:** the shell's height comes from `--app-h` and nothing else —
+never `height: 100%`, never `100vh` (the *large* viewport on iOS, which
+overshoots by the toolbar height). All v3.4 invariants still stand.
+
 ## Demo mode (public portfolio copy)
 
 - `src/lib/demoSeed.ts` — `isDemoMode()` is true when `VITE_DEMO=true`
@@ -318,7 +348,9 @@ This is load-bearing structure, not styling:
   trap otherwise. Keep it that way.
 - **The document never scrolls.** The app is a fixed-height shell and
   `<main>` is the only scroller; the bottom nav is in normal flow, never
-  `position: fixed`. See §v3.4 and DESIGN-SYSTEM §5b before touching layout.
+  `position: fixed`. Its height is `--app-h` (the measured viewport), never
+  `100%` / `100vh`. See §v3.4 + §v3.5 and DESIGN-SYSTEM §5b before touching
+  layout.
 
 ## Maintenance recipes
 
@@ -347,8 +379,10 @@ This is load-bearing structure, not styling:
 3. Reports: `curl -X POST '<fn-url>/forge-reports?force=weekly' -H 'x-forge-secret: …'`
    → Telegram + email arrive, report shows under Plan → Reports.
 4. iPhone PWA still standalone with safe areas intact.
-5. **Layout (iPhone Safari, not just the PWA):** fling-scroll the longest
-   screen (Progress) hard to the end several times — the nav must stay
-   pinned to the bottom, with no black gap past the content and no drift
-   mid-screen. Tab-switch from a deep-scrolled screen → lands at the top.
-   Pull-to-refresh fires at the top of a tab and NOT mid-page.
+5. **Layout (iPhone Safari AND the installed PWA):** the bottom nav must sit
+   flush with the bottom of the SCREEN — no black band under it, in either
+   orientation and on a tablet. Then fling-scroll the longest screen
+   (Progress) hard to the end several times — the nav stays pinned, with no
+   black gap past the content and no drift mid-screen. Tab-switch from a
+   deep-scrolled screen → lands at the top. Pull-to-refresh fires at the top
+   of a tab and NOT mid-page.

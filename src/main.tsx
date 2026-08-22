@@ -6,6 +6,10 @@ import './index.css'
 import App from './App'
 import { repo } from './lib/repo'
 import { seedDemoData } from './lib/demoSeed'
+import { trackViewportHeight } from './lib/viewport'
+
+// The shell is sized off the real viewport, not `height: 100%` (iOS gap).
+trackViewportHeight()
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
