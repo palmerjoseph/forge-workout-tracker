@@ -293,6 +293,11 @@ black gap.
 never `height: 100%`, never `100vh` (the *large* viewport on iOS, which
 overshoots by the toolbar height). All v3.4 invariants still stand.
 
+**Deployed to BOTH Vercel projects** (`forge-workout` and `forge-demo`).
+The demo had been stuck on a pre-v3.4 build for 32 days — see the Demo mode
+section: a git push deploys neither project, so every frontend change needs
+two CLI deploys.
+
 ## Demo mode (public portfolio copy)
 
 - `src/lib/demoSeed.ts` — `isDemoMode()` is true when `VITE_DEMO=true`
@@ -305,6 +310,13 @@ overshoots by the toolbar height). All v3.4 invariants still stand.
   NO env vars = the demo (localStorage, no login, per-browser sandbox).
   The real app is the Vercel project WITH the Supabase env vars. One
   codebase, two projects. Real app never triggers demo seeding.
+  - Demo project: **`forge-demo`** → https://forge-demo-ochre.vercel.app
+  - Neither project is git-connected, so **a push deploys nothing** — both
+    are CLI deploys and BOTH must be run, or the demo silently rots on an
+    old build (it sat 32 days behind through v3.4 + v3.5 that way).
+  - `.vercel/` is linked to `forge-workout`; deploying the demo with
+    `--project forge-demo` does NOT re-link it (verified), so the local link
+    survives. Never point `.vercel/project.json` at the demo.
 - Test locally: `VITE_SUPABASE_URL="" VITE_SUPABASE_ANON_KEY="" VITE_DEMO=true npm run dev`.
 
 ## ⚠ OPEN ISSUES (as of handover, 2026-07-18)
@@ -356,7 +368,14 @@ overshoots by the toolbar height). All v3.4 invariants still stand.
 
 - **Run locally:** `npm run dev` (localStorage mode unless `.env` exists).
 - **Type-check + build:** `npm run build` (tsc -b && vite build; PWA autogen).
-- **Deploy frontend:** `npx vercel --prod`.
+- **Deploy frontend — BOTH projects, every time** (no git auto-deploy):
+  - real app: `npx vercel --prod --scope palmer-joseph-ai`
+  - public demo: `npx vercel --prod --scope palmer-joseph-ai --project forge-demo --yes`
+  (`--scope` is required — a bare `npx vercel --prod` fails "Not authorized"
+  because the personal account is the CLI default, not the team that owns
+  the projects. Verify a deploy landed by diffing the served CSS filename:
+  `curl -s <url> | grep -o 'assets/index-[A-Za-z0-9_-]*\.css'` — both sites
+  build from one codebase, so the hashes should MATCH.)
 - **Redeploy a function:** `npx supabase functions deploy forge-reports --project-ref REF --no-verify-jwt`.
 - **Change report timing:** edit `supabase/cron.sql` + the 9 AM check in
   `functions/forge-reports/index.ts`.
