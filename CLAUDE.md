@@ -421,9 +421,15 @@ iOS viewport behaviour — do not theorise from a local resize.
   - public demo: `npx vercel --prod --scope palmer-joseph-ai --project forge-demo --yes`
   (`--scope` is required — a bare `npx vercel --prod` fails "Not authorized"
   because the personal account is the CLI default, not the team that owns
-  the projects. Verify a deploy landed by diffing the served CSS filename:
-  `curl -s <url> | grep -o 'assets/index-[A-Za-z0-9_-]*\.css'` — both sites
-  build from one codebase, so the hashes should MATCH.)
+  the projects.)
+  Verify a deploy landed by reading the build stamp out of the served bundle:
+  ```
+  u=https://forge.cleverstack.co
+  js=$(curl -s $u/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+  curl -s "$u/$js" | grep -oE '20[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}' | head -1
+  ```
+  (Asset HASHES no longer match between the two projects — `__BUILD_ID__`
+  differs per build invocation — so compare the stamps, not the filenames.)
 - **Force an installed PWA to update (iOS):** it should self-update within a
   foreground check now (v3.6). If a phone is still stale: delete the app from
   the Home Screen, open the URL in Safari, Share → Add to Home Screen. To
