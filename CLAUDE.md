@@ -72,6 +72,8 @@ src/
     ui.tsx               Primitives: Card, GlowButton, StatRing, Stepper,
                          Segmented, Sheet(portal!), EmptyState
     AuthGate.tsx         Supabase email/password gate (skipped in local mode)
+    Diag.tsx             ?diag=1 on-device viewport/build readout (renders
+                         nothing otherwise; mounted OUTSIDE AuthGate)
     BottomNav.tsx        Home · Train · Progress · Plan
   screens/
     Home.tsx             Today card, week ring, streak, coach message
@@ -93,7 +95,10 @@ src/
                          stats, detects PRs, unlocks Challenge at 6 full
                          sessions of a day type)
     viewport.ts          Publishes the REAL viewport height as --app-h
-                         (the shell's height — never 100% / 100vh)
+                         (the shell's height — never 100% / 100vh);
+                         also exports viewportDiag() for ?diag=1
+    sw.ts                Service-worker registration + update path (an
+                         installed PWA must not serve cached code forever)
     repo/                Storage abstraction:
       types.ts           Repo interface (the ONLY storage contract)
       local.ts           localStorage impl (no env vars → used automatically)
@@ -298,6 +303,44 @@ The demo had been stuck on a pre-v3.4 build for 32 days — see the Demo mode
 section: a git push deploys neither project, so every frontend change needs
 two CLI deploys.
 
+## v3.6 — PWA staleness + the diagnostic (2026-08-22)
+
+v3.5 shipped and Palmer's iPhone showed **no change at all**. Two separate
+things were wrong, and the second one is why nothing appeared to happen:
+
+- **The installed PWA never updated.** `vite-plugin-pwa`'s default injected
+  snippet (`registerSW.js`) only registers on `load` and never calls
+  `update()`. An installed iOS PWA that gets resumed rather than cold-started
+  can therefore serve a precached build indefinitely — no amount of deploying
+  reaches the phone. `injectRegister: false` now, and `src/lib/sw.ts`
+  registers with `updateViaCache: 'none'`, calls `reg.update()` on
+  visibilitychange / focus / hourly, and reloads ONCE on `controllerchange`
+  (guarded by `hadController`, so a first install doesn't double-load).
+  The SW is built with `skipWaiting` + `clientsClaim`.
+- **Nothing could prove which build a phone was running.** `?diag=1` renders
+  `components/Diag.tsx`: build stamp (`__BUILD_ID__`, defined in
+  vite.config.ts), standalone flag, `--app-h`, innerHeight,
+  `visualViewport.height`, `screen.height`, clientHeight, both safe-area
+  insets, and the live gap under the nav — plus a lime hairline at the app's
+  bottom edge. Black BELOW the line = the web view is taller than the app;
+  line off-screen = the app is taller than the web view. It renders nothing
+  without the flag and mounts outside `AuthGate` so it works logged out.
+
+`viewport.ts` also grew one rule: in an installed PWA (standalone, portrait,
+not zoomed, no keyboard) **with non-zero safe-area insets** — proof that
+`viewport-fit=cover` is in effect and the web view really does reach the
+screen edges — a shortfall against `screen.height` (< 200px) is iOS
+under-reporting and `screen.height` wins. Without that proof we never
+overshoot: painting past a genuinely inset web view would hide the nav,
+which is worse than a gap.
+
+Also added the standards `mobile-web-app-capable` meta alongside the
+deprecated `apple-` one.
+
+**Debugging any future layout report starts here:** ask for a screenshot of
+`https://forge.cleverstack.co/?diag=1`. Desktop browsers cannot reproduce
+iOS viewport behaviour — do not theorise from a local resize.
+
 ## Demo mode (public portfolio copy)
 
 - `src/lib/demoSeed.ts` — `isDemoMode()` is true when `VITE_DEMO=true`
@@ -376,6 +419,10 @@ two CLI deploys.
   the projects. Verify a deploy landed by diffing the served CSS filename:
   `curl -s <url> | grep -o 'assets/index-[A-Za-z0-9_-]*\.css'` — both sites
   build from one codebase, so the hashes should MATCH.)
+- **Force an installed PWA to update (iOS):** it should self-update within a
+  foreground check now (v3.6). If a phone is still stale: delete the app from
+  the Home Screen, open the URL in Safari, Share → Add to Home Screen. To
+  confirm which build is live, open `?diag=1` and read the build stamp.
 - **Redeploy a function:** `npx supabase functions deploy forge-reports --project-ref REF --no-verify-jwt`.
 - **Change report timing:** edit `supabase/cron.sql` + the 9 AM check in
   `functions/forge-reports/index.ts`.
@@ -404,4 +451,5 @@ two CLI deploys.
    (Progress) hard to the end several times — the nav stays pinned, with no
    black gap past the content and no drift mid-screen. Tab-switch from a
    deep-scrolled screen → lands at the top. Pull-to-refresh fires at the top
-   of a tab and NOT mid-page.
+   of a tab and NOT mid-page. If anything looks wrong, screenshot `?diag=1`
+   — GAP under nav must read 0px.

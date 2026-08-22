@@ -7,9 +7,13 @@ import App from './App'
 import { repo } from './lib/repo'
 import { seedDemoData } from './lib/demoSeed'
 import { trackViewportHeight } from './lib/viewport'
+import { registerServiceWorker } from './lib/sw'
 
 // The shell is sized off the real viewport, not `height: 100%` (iOS gap).
 trackViewportHeight()
+// Registered here (not by vite-plugin-pwa's default snippet) so an installed
+// PWA actually picks up new builds instead of serving cached code forever.
+registerServiceWorker()
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },

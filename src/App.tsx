@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AuthGate } from './components/AuthGate'
 import { BottomNav } from './components/BottomNav'
+import { Diag } from './components/Diag'
 import { PullToRefresh } from './lib/pullRefresh'
 import { Home } from './screens/Home'
 import { Train } from './screens/Train'
@@ -21,6 +22,7 @@ export default function App() {
   }, [location.pathname, location.state?.reset])
 
   return (
+    <>
     <AuthGate>
     <div className="h-full flex flex-col overflow-hidden relative">
       {/* Ambient signature glow */}
@@ -40,5 +42,8 @@ export default function App() {
       <BottomNav />
     </div>
     </AuthGate>
+    {/* Renders only for ?diag=1 — outside AuthGate so it works when logged out */}
+    <Diag />
+    </>
   )
 }

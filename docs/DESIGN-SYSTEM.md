@@ -94,6 +94,14 @@ with the measured pixel height by `src/lib/viewport.ts`, which also tracks
 the on-screen keyboard so the shell shrinks above it. Size the shell off that
 variable — never `100vh`, never `height: 100%`.
 
+**Debugging a layout report from a phone:** open `?diag=1` (renders
+`components/Diag.tsx`) and screenshot it — build stamp, standalone flag,
+`--app-h`, innerHeight, `visualViewport.height`, `screen.height`, safe-area
+insets, and the live gap under the nav, with a lime hairline on the app's
+bottom edge. A desktop browser cannot reproduce iOS viewport behaviour, and
+a phone can be running an old cached build (CLAUDE.md §v3.6) — check the
+build stamp before changing any CSS.
+
 ```
 <div class="h-full flex flex-col overflow-hidden">   ← the shell
   <main class="flex-1 min-h-0 overflow-y-auto">      ← THE scroller
