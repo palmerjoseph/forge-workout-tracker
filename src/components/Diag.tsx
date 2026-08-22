@@ -1,5 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { viewportDiag } from '../lib/viewport'
+
+export const DIAG_KEY = 'forge.diag'
+
+/** Five taps within 2s on any element wired to this turns the panel on —
+ *  the only way in once the app is installed to the Home Screen. The count
+ *  lives in a ref so it survives re-renders (and taps that cause none). */
+export function useDiagTapTarget() {
+  const taps = useRef({ count: 0, first: 0 })
+  return () => {
+    const now = Date.now()
+    const t = taps.current
+    if (now - t.first > 2000) {
+      t.first = now
+      t.count = 0
+    }
+    t.count += 1
+    if (t.count >= 5) {
+      localStorage.setItem(DIAG_KEY, '1')
+      window.location.reload()
+    }
+  }
+}
 
 /** On-device layout diagnostic — open `<url>/?diag=1` and screenshot it.
  *
@@ -9,14 +31,22 @@ import { viewportDiag } from '../lib/viewport'
  *  NOTHING unless explicitly asked for, and mounts outside AuthGate so it
  *  works from the login screen too.
  *
+ *  An installed PWA has no address bar, so `?diag=1` is unreachable there:
+ *  five quick taps on the date line on Home set `forge.diag` in
+ *  localStorage, which turns this on too. The panel's own Hide button
+ *  clears it.
+ *
  *  The lime hairline marks where the app thinks the bottom of the screen is:
  *  if there is black BELOW that line, the web view is bigger than the app;
  *  if the line is off-screen, the app is bigger than the web view. */
 export function Diag() {
+  const [dismissed, setDismissed] = useState(false)
   const on =
+    !dismissed &&
     typeof window !== 'undefined' &&
     (new URLSearchParams(window.location.search).get('diag') === '1' ||
-      window.location.hash === '#diag')
+      window.location.hash === '#diag' ||
+      localStorage.getItem(DIAG_KEY) === '1')
   const [info, setInfo] = useState(() => (on ? viewportDiag() : null))
   const [nav, setNav] = useState<{ bottom: number; gap: number } | null>(null)
 
@@ -95,8 +125,26 @@ export function Diag() {
             <span style={{ fontWeight: 600 }}>{v}</span>
           </div>
         ))}
-        <div style={{ opacity: 0.6, marginTop: 6 }}>
-          Screenshot this. Green line = app's bottom edge.
+        <div
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}
+        >
+          <span style={{ opacity: 0.6 }}>Screenshot this. Green line = bottom edge.</span>
+          <button
+            onClick={() => {
+              localStorage.removeItem(DIAG_KEY)
+              setDismissed(true)
+            }}
+            style={{
+              border: '1px solid #a8e063',
+              background: 'transparent',
+              color: '#a8e063',
+              borderRadius: 8,
+              padding: '4px 10px',
+              font: 'inherit',
+            }}
+          >
+            Hide
+          </button>
         </div>
       </div>
     </>

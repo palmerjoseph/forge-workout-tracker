@@ -325,6 +325,11 @@ things were wrong, and the second one is why nothing appeared to happen:
   bottom edge. Black BELOW the line = the web view is taller than the app;
   line off-screen = the app is taller than the web view. It renders nothing
   without the flag and mounts outside `AuthGate` so it works logged out.
+  An installed PWA has no address bar, so **five quick taps on the date line
+  on Home** (`useDiagTapTarget`, wired in Home.tsx — it is a hook, so it sits
+  above the early-return guard) set `forge.diag` in localStorage and reload;
+  the panel's Hide button clears it. That is the only way to read the
+  diagnostic where the iOS bugs actually happen.
 
 `viewport.ts` also grew one rule: in an installed PWA (standalone, portrait,
 not zoomed, no keyboard) **with non-zero safe-area insets** — proof that
@@ -422,7 +427,8 @@ iOS viewport behaviour — do not theorise from a local resize.
 - **Force an installed PWA to update (iOS):** it should self-update within a
   foreground check now (v3.6). If a phone is still stale: delete the app from
   the Home Screen, open the URL in Safari, Share → Add to Home Screen. To
-  confirm which build is live, open `?diag=1` and read the build stamp.
+  confirm which build is live, open `?diag=1` and read the build stamp (or,
+  inside the installed app, tap the date line on Home five times).
 - **Redeploy a function:** `npx supabase functions deploy forge-reports --project-ref REF --no-verify-jwt`.
 - **Change report timing:** edit `supabase/cron.sql` + the 9 AM check in
   `functions/forge-reports/index.ts`.

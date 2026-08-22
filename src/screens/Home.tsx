@@ -10,6 +10,7 @@ import { todayKey, usePrs, useRotation, useRoutines, useSettings, useStats, useW
 import { supabaseClient } from '../lib/repo/supabase'
 import { isDemoMode } from '../lib/demoSeed'
 import { dayName } from '../lib/types'
+import { useDiagTapTarget } from '../components/Diag'
 
 const fadeUp = {
   initial: { opacity: 0, y: 14 },
@@ -51,6 +52,8 @@ export function Home() {
   const { data: stats = [] } = useStats()
   const { data: prs = [] } = usePrs()
   const { data: settings } = useSettings()
+  // Hook, so it MUST stay above the guard below (see CLAUDE.md §v3.3)
+  const diagTap = useDiagTapTarget()
 
   if (!rotation || !routines || !settings) return null
 
@@ -139,7 +142,9 @@ export function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-lime icon-live" /> Live demo · sample data
           </span>
         )}
-        <p className="eyebrow">{format(new Date(), 'EEEE, MMMM d')}</p>
+        {/* 5 quick taps here opens the viewport diagnostic — the installed
+            PWA has no address bar, so ?diag=1 is unreachable there */}
+        <p className="eyebrow" onClick={diagTap}>{format(new Date(), 'EEEE, MMMM d')}</p>
         <h1 className="display text-4xl mt-1">
           Welcome back, <span className="text-lime" style={{ textShadow: '0 0 18px rgba(168,224,99,0.5)' }}>{settings.name}</span>
         </h1>

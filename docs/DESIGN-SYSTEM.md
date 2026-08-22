@@ -94,8 +94,9 @@ with the measured pixel height by `src/lib/viewport.ts`, which also tracks
 the on-screen keyboard so the shell shrinks above it. Size the shell off that
 variable — never `100vh`, never `height: 100%`.
 
-**Debugging a layout report from a phone:** open `?diag=1` (renders
-`components/Diag.tsx`) and screenshot it — build stamp, standalone flag,
+**Debugging a layout report from a phone:** open `?diag=1` — or, in the
+installed PWA where there is no address bar, tap the date line on Home five
+times — (renders `components/Diag.tsx`) and screenshot it — build stamp, standalone flag,
 `--app-h`, innerHeight, `visualViewport.height`, `screen.height`, safe-area
 insets, and the live gap under the nav, with a lime hairline on the app's
 bottom edge. A desktop browser cannot reproduce iOS viewport behaviour, and
