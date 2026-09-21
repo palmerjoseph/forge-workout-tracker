@@ -182,7 +182,7 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
   (there is nothing to save; leaving it in-progress was the stuck-state
   bug). "Done editing" label adapts; nav re-tap discards empty sessions
   (live OR edit) but NEVER finishes a live session that has sets.
-- ⚠️ PENDING (2026-09-21 domain move): Palmer must set this in the Supabase dashboard; until then it still reads forge.cleverstack.co.
+- ✅ 2026-09-21: Site URL set to https://palmerjoseph-forge.vercel.app and added to Redirect URLs (verified in the dashboard).
 - Supabase Auth **Site URL** is `https://palmerjoseph-forge.vercel.app`; Redirect URLs
   include that canonical address plus the Vercel fallback. This is dashboard
   config, not code. The app login is `palmerjosephai@gmail.com`.

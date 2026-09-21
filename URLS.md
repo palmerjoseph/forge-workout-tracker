@@ -73,7 +73,7 @@ use the public demo URL, never the private tracker URL.
   organization. It retains the same project ref (`iegewntownzguykxtrth`), so
   Vercel's encrypted Supabase variables and the stored workout data remain
   valid.
-- ⚠️ PENDING (2026-09-21 domain move): Palmer must set this in the Supabase dashboard; until then it still reads forge.cleverstack.co.
+- ✅ 2026-09-21: Site URL set to https://palmerjoseph-forge.vercel.app and added to Redirect URLs (verified in the dashboard).
 - Supabase Auth URL Configuration is complete: Site URL is
   `https://palmerjoseph-forge.vercel.app`, and Redirect URLs retain both the canonical
   address and the Vercel fallback. The app login is
