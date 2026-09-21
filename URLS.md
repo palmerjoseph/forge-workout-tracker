@@ -5,7 +5,7 @@ use the public demo URL, never the private tracker URL.
 
 ## 🟢 MY REAL APP (private — login required)
 
-**Canonical personal URL:** **https://forge.cleverstack.co**
+**Canonical personal URL:** **https://palmerjoseph-forge.vercel.app**
 
 **Temporary Vercel URL:** https://forge-workout-palmer-joseph-ai.vercel.app
 
@@ -14,13 +14,13 @@ use the public demo URL, never the private tracker URL.
 - Connected to Supabase (project ref `iegewntownzguykxtrth`).
 - Sends the Sunday/monthly Telegram + email reports.
 - Add to iPhone home screen from here.
-- `forge.cleverstack.co` is assigned only to the `forge-workout` Vercel project.
+- `palmerjoseph-forge.vercel.app` is assigned only to the `forge-workout` Vercel project.
   Its encrypted Production Supabase variables remain configured, so changing
   the URL does not replace or erase any workout data.
 
 ## 🔵 DEMO (public — no login, for my portfolio)
 
-**Canonical portfolio URL:** **https://forgedemo.cleverstack.co**
+**Canonical portfolio URL:** **https://forgetrackerdemo.vercel.app**
 
 **Temporary Vercel URL:** https://forge-demo-palmer-joseph-ai.vercel.app
 
@@ -29,7 +29,7 @@ use the public demo URL, never the private tracker URL.
 - Each visitor gets their own private sandbox in their own browser.
 - Cannot see or touch my real data or my database (it has no Supabase connection).
 - Shows a "Live demo · sample data" badge.
-- The portfolio card links to the canonical `forgedemo.cleverstack.co` address.
+- The portfolio card links to the canonical `forgetrackerdemo.vercel.app` address.
   Keep the Vercel address only as a technical fallback, not as the public-facing
   link.
 
@@ -45,14 +45,14 @@ use the public demo URL, never the private tracker URL.
 
 ### Custom-domain migration status — July 29, 2026
 
-- Requested hostname: `forgedemo.cleverstack.co`.
+- Requested hostname: `forgetrackerdemo.vercel.app`.
 - It is assigned in Vercel to the public `forge-demo` project (project ID
   `prj_Lc3DMajEBs5olvKB2aPeTwMeQXhG`), not `forge-workout`.
 - Do not attach this hostname to the private tracker: it has Supabase-backed
   personal workout data and requires login.
 - Cloudflare DNS is configured and Vercel has verified this hostname for
   `forge-demo`; HTTP verification returned 200. Use
-  `https://forgedemo.cleverstack.co` for the portfolio card.
+  `https://forgetrackerdemo.vercel.app` for the portfolio card.
 - This repository has no reference to `thepalmerjoseph@gmail.com`. Tracked
   report configuration and setup instructions already use
   `palmerjosephai@gmail.com`. Any Vercel account-owner email must be checked
@@ -60,7 +60,7 @@ use the public demo URL, never the private tracker URL.
 
 ### Personal-app domain status — July 29, 2026
 
-- Requested hostname: `forge.cleverstack.co`.
+- Requested hostname: `palmerjoseph-forge.vercel.app`.
 - It is assigned in Vercel to the private `forge-workout` project (project ID
   `prj_ZDnQivCEzk0UMf8NCbqGBsnwSQ27`) and is intentionally separate from
   `forge-demo`.
@@ -74,7 +74,7 @@ use the public demo URL, never the private tracker URL.
   Vercel's encrypted Supabase variables and the stored workout data remain
   valid.
 - Supabase Auth URL Configuration is complete: Site URL is
-  `https://forge.cleverstack.co`, and Redirect URLs retain both the canonical
+  `https://palmerjoseph-forge.vercel.app`, and Redirect URLs retain both the canonical
   address and the Vercel fallback. The app login is
   `palmerjosephai@gmail.com`.
 - Password recovery was fixed and deployed on 2026-07-29. A recovery link now

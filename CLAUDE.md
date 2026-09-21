@@ -25,7 +25,7 @@ Palmer's working preferences (non-negotiable):
 
 ## Live deployment (as of 2026-07-29)
 
-- **Canonical personal URL:** https://forge.cleverstack.co
+- **Canonical personal URL:** https://palmerjoseph-forge.vercel.app
   (Vercel project `forge-workout`, deployment protection disabled — FORGE
   has its own auth). The generated Vercel address
   `https://forge-workout-palmer-joseph-ai.vercel.app` remains a fallback.
@@ -182,7 +182,7 @@ env.example              Template for .env (VITE_SUPABASE_URL / ANON_KEY)
   (there is nothing to save; leaving it in-progress was the stuck-state
   bug). "Done editing" label adapts; nav re-tap discards empty sessions
   (live OR edit) but NEVER finishes a live session that has sets.
-- Supabase Auth **Site URL** is `https://forge.cleverstack.co`; Redirect URLs
+- Supabase Auth **Site URL** is `https://palmerjoseph-forge.vercel.app`; Redirect URLs
   include that canonical address plus the Vercel fallback. This is dashboard
   config, not code. The app login is `palmerjosephai@gmail.com`.
 
@@ -343,7 +343,7 @@ Also added the standards `mobile-web-app-capable` meta alongside the
 deprecated `apple-` one.
 
 **Debugging any future layout report starts here:** ask for a screenshot of
-`https://forge.cleverstack.co/?diag=1`. Desktop browsers cannot reproduce
+`https://palmerjoseph-forge.vercel.app/?diag=1`. Desktop browsers cannot reproduce
 iOS viewport behaviour — do not theorise from a local resize.
 
 ## Demo mode (public portfolio copy)
@@ -424,7 +424,7 @@ iOS viewport behaviour — do not theorise from a local resize.
   the projects.)
   Verify a deploy landed by reading the build stamp out of the served bundle:
   ```
-  u=https://forge.cleverstack.co
+  u=https://palmerjoseph-forge.vercel.app
   js=$(curl -s $u/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
   curl -s "$u/$js" | grep -oE '20[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}' | head -1
   ```
